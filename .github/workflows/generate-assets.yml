@@ -1,0 +1,53 @@
+name: Generate Knowledge Assets
+
+on:
+  push:
+    paths:
+      - "ideas/**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate cards from ideas
+        run: |
+          mkdir -p cards
+
+          for file in ideas/*.md; do
+            name=$(basename "$file" .md)
+            card="cards/${name}.md"
+
+            if [ ! -f "$card" ]; then
+              cp templates/knowledge-card.md "$card"
+              echo "" >> "$card"
+              echo "## Source" >> "$card"
+              echo "$file" >> "$card"
+              echo "" >> "$card"
+              echo "## Raw Idea" >> "$card"
+              cat "$file" >> "$card"
+            fi
+          done
+
+      - name: Commit generated cards
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add cards/
+          git diff --cached --quiet || git commit -m "Generate knowledge cards"
+          git push
+
+      - name: Create review issue
+        run: |
+          gh issue create \
+            --title "Review generated knowledge cards" \
+            --body "ideas/ から生成された cards/ を確認し、Core Insight・Applications・Validation を追記してください。"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
