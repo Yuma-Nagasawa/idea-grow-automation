@@ -1,0 +1,33 @@
+name: Generate Knowledge Assets
+
+on:
+  push:
+    paths:
+      - "ideas/**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate card
+        run: |
+          mkdir -p cards
+          for file in ideas/*.md; do
+            name=$(basename "$file" .md)
+            cp templates/knowledge-card.md "cards/${name}.md"
+          done
+
+      - name: Create review issue
+        run: |
+          gh issue create \
+            --title "Review generated knowledge assets" \
+            --body "ideas/ から生成したカードを確認してください。"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
