@@ -3,6 +3,7 @@ name: Generate Knowledge Assets
 on:
   push:
     paths:
+      - "ideas/*.md"
       - "ideas/**/*.md"
   workflow_dispatch:
 
@@ -36,14 +37,6 @@ jobs:
             fi
           done
 
-      - name: Commit generated cards
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add git add cards/ prompts/
-          git diff --cached --quiet || git commit -m "Generate knowledge cards"
-          git push
-
       - name: Generate prompts from ideas
         run: |
           mkdir -p prompts
@@ -54,13 +47,24 @@ jobs:
 
             if [ ! -f "$prompt" ]; then
               cp templates/prompt-template.md "$prompt"
+              echo "" >> "$prompt"
+              echo "## Source" >> "$prompt"
+              echo "$file" >> "$prompt"
             fi
           done
+
+      - name: Commit generated files
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add cards/ prompts/
+          git diff --cached --quiet || git commit -m "Generate knowledge assets"
+          git push
 
       - name: Create review issue
         run: |
           gh issue create \
-            --title "Review generated knowledge cards" \
-            --body "ideas/ から生成された cards/ を確認し、Core Insight・Applications・Validation を追記してください。"
+            --title "Review generated knowledge assets" \
+            --body "ideas/ から生成された cards/ と prompts/ を確認してください。"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
