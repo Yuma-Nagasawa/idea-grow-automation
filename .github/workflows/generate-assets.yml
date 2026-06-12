@@ -40,9 +40,22 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add cards/
+          git add git add cards/ prompts/
           git diff --cached --quiet || git commit -m "Generate knowledge cards"
           git push
+
+      - name: Generate prompts from ideas
+        run: |
+          mkdir -p prompts
+
+          for file in ideas/*.md; do
+            name=$(basename "$file" .md)
+            prompt="prompts/${name}-prompt.md"
+
+            if [ ! -f "$prompt" ]; then
+              cp templates/prompt-template.md "$prompt"
+            fi
+          done
 
       - name: Create review issue
         run: |
